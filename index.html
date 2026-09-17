@@ -5,42 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>EPL — Eid Premier League</title>
 <meta name="description" content="Live cricket tournament hub — teams, auction, live scoring, points table and stats.">
+<!-- Force browsers/CDNs to always fetch the latest version of this page instead of
+     serving a stale cached copy to visitors (GitHub Pages / Netlify don't let this
+     single HTML file set real HTTP cache headers, so this is done via meta tags). -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="app-build" content="2026-09-17-01">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    EPL TOURNAMENT APP — DESIGN TOKENS
-   "Championship Broadcast" palette: stadium-night navy + emerald pitch
-   + trophy gold + crimson live-accent. Classic sports-league feel.
+   Minimal, premium cricket-championship identity: deep emerald +
+   soft green on white/off-white, gold reserved for championship
+   moments, red reserved for danger/wicket actions only.
    ============================================================ */
 :root{
-  --pitch-900:#081b12;
-  --pitch-800:#0c2a1b;
-  --pitch-700:#123a24;
-  --pitch-600:#1a5c37;
-  --pitch-500:#1f7a45;
+  --pitch-900:#0a2416;
+  --pitch-800:#0f3320;
+  --pitch-700:#15462b;
+  --pitch-600:#1c5c37;
+  --pitch-500:#227a46;
   --navy-950:#050c14;
   --navy-900:#0a1626;
   --navy-800:#101f36;
-  --cream:#f6f1e3;
-  --cream-dim:#e9dfc4;
-  --ink:#12181a;
-  --ink-soft:#54605e;
-  --gold:#e0a929;
-  --gold-dark:#a97b0f;
-  --gold-light:#f5cf6a;
+  --cream:#fafaf8;
+  --cream-dim:#f0f2ef;
+  --ink:#171e1a;
+  --ink-soft:#63706b;
+  --gold:#c79a3d;
+  --gold-dark:#a17c2c;
+  --gold-light:#dab765;
   --white:#ffffff;
-  --red:#c8352a;
-  --red-soft:#f6ddd8;
+  --red:#c0392b;
+  --red-soft:#f7e3e0;
   --blue:#1c7a92;
-  --line:#ddd2ad;
+  --line:#e4e6e2;
   --line-dark:#23412d;
-  --shadow:0 8px 24px rgba(5,15,10,0.14);
-  --shadow-lg:0 20px 48px rgba(5,15,10,0.26);
+  --shadow:0 2px 10px rgba(15,30,20,0.06);
+  --shadow-lg:0 10px 30px rgba(15,30,20,0.10);
   --radius-s:6px;
   --radius-m:10px;
-  --radius-l:16px;
+  --radius-l:14px;
   --font-display:'Space Grotesk',sans-serif;
   --font-score:'Bebas Neue',var(--font-display),sans-serif;
   --font-body:'Inter',sans-serif;
@@ -52,8 +60,8 @@ body{
   font-family:var(--font-body);
   background:var(--cream);
   background-image:
-    radial-gradient(circle at 6% 0%, rgba(224,169,41,0.06), transparent 40%),
-    radial-gradient(circle at 100% 12%, rgba(18,58,36,0.05), transparent 45%);
+    radial-gradient(circle at 6% 0%, rgba(199,154,61,0.035), transparent 40%),
+    radial-gradient(circle at 100% 12%, rgba(21,70,43,0.03), transparent 45%);
   background-attachment:fixed;
   color:var(--ink);
   line-height:1.5;
@@ -136,29 +144,42 @@ main{max-width:1180px;margin:0 auto;padding:14px;min-height:60vh;}
 .drawer-body a:active,.drawer-body button:active{background:var(--cream-dim);}
 .drawer-foot{padding:12px;border-top:1px solid var(--line);}
 
-/* Buttons */
+/* Buttons — 5-role system: Primary / Secondary / Championship / Danger / Disabled */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   padding:11px 18px;border-radius:var(--radius-m);font-weight:700;font-size:14px;
-  transition:transform .1s, box-shadow .15s, filter .15s; white-space:nowrap;
+  transition:transform .15s ease, box-shadow .18s ease, filter .18s ease, background .18s ease, border-color .18s ease;
+  white-space:nowrap; border:1.5px solid transparent; cursor:pointer;
 }
 .btn:active{transform:scale(0.97);}
-.btn-primary{background:linear-gradient(135deg,var(--pitch-600),var(--pitch-800));color:var(--cream);box-shadow:0 3px 10px rgba(18,58,36,0.3);}
-.btn-gold{background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--navy-950);box-shadow:0 3px 10px rgba(169,123,15,0.35);}
-.btn-outline{background:transparent;border:1.5px solid var(--pitch-700);color:var(--pitch-700);}
+/* Primary — subtle emerald gradient */
+.btn-primary{background:linear-gradient(160deg,var(--pitch-600),var(--pitch-700));color:var(--white);box-shadow:0 2px 8px rgba(15,51,32,0.22);}
+.btn-primary:hover{filter:brightness(1.06);box-shadow:0 3px 12px rgba(15,51,32,0.28);}
+/* Championship — soft gold, for standout/celebratory actions (Finish Match etc.) */
+.btn-gold{background:linear-gradient(160deg,var(--gold-light),var(--gold));color:var(--navy-950);box-shadow:0 2px 8px rgba(161,124,44,0.22);}
+.btn-gold:hover{filter:brightness(1.04);box-shadow:0 3px 12px rgba(161,124,44,0.28);}
+/* Secondary — soft-gray/white fill with green text */
+.btn-outline{background:var(--cream-dim);border:1.5px solid var(--line);color:var(--pitch-700);}
+.btn-outline:hover{background:#e7ebe6;border-color:var(--pitch-500);}
 .btn-outline-light{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.3);color:var(--cream);}
-.btn-danger{background:linear-gradient(135deg,#d64536,var(--red));color:var(--white);box-shadow:0 3px 10px rgba(200,53,42,0.3);}
-.btn-ghost{background:var(--cream-dim);color:var(--ink);}
+.btn-outline-light:hover{background:rgba(255,255,255,.14);}
+/* Danger — reserved for Wicket / destructive actions only */
+.btn-danger{background:linear-gradient(160deg,#cf4a3c,var(--red));color:var(--white);box-shadow:0 2px 8px rgba(192,57,43,0.22);}
+.btn-danger:hover{filter:brightness(1.05);box-shadow:0 3px 12px rgba(192,57,43,0.28);}
+/* Ghost — quiet tertiary action, neutral */
+.btn-ghost{background:var(--cream-dim);color:var(--ink);border-color:transparent;}
+.btn-ghost:hover{background:#e7ebe6;}
 .btn-sm{padding:7px 12px;font-size:12.5px;border-radius:var(--radius-s);}
 .btn-block{width:100%;}
-.btn:disabled{opacity:.5;pointer-events:none;}
+.btn:disabled{opacity:.45;pointer-events:none;filter:grayscale(.3);}
 .btn-icon{width:38px;height:38px;padding:0;border-radius:50%;}
+@media(hover:none){ .btn:hover{filter:none;box-shadow:inherit;background:inherit;} }
 
-/* Cards */
-.card{background:var(--white);border-radius:var(--radius-l);box-shadow:var(--shadow);padding:16px;border:1px solid rgba(18,58,36,0.05);}
+/* Cards — used sparingly; thin border + very soft shadow, not heavy boxes */
+.card{background:var(--white);border-radius:var(--radius-l);box-shadow:var(--shadow);padding:16px;border:1px solid var(--line);}
 .card-tight{padding:12px;}
-.section-title{display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;padding-left:10px;border-left:4px solid var(--gold);}
-.section-title h2{font-size:18px;color:var(--pitch-900);font-weight:700;}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;padding-left:10px;border-left:3px solid var(--pitch-600);}
+.section-title h2{font-size:17px;color:var(--pitch-900);font-weight:700;letter-spacing:-.01em;}
 .section-title .link-more{font-size:12.5px;font-weight:700;color:var(--pitch-700);}
 .section-title h2 .tag-count{font-size:11px;background:var(--cream-dim);color:var(--ink-soft);padding:2px 8px;border-radius:20px;margin-left:8px;font-family:var(--font-body);}
 
@@ -270,8 +291,9 @@ tr:nth-child(-n+3) td:first-child{font-weight:800;color:var(--gold-dark);}
 .admin-shell{display:flex;min-height:calc(100vh - var(--header-h) - 64px);gap:16px;}
 .admin-side{width:210px;flex-shrink:0;display:none;}
 @media(min-width:900px){.admin-side{display:block;} .admin-main{flex:1;min-width:0;}}
-.admin-side a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-m);font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-bottom:2px;}
-.admin-side a.active{background:linear-gradient(120deg,var(--pitch-700),var(--pitch-900));color:#fff;}
+.admin-side a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-m);font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-bottom:2px;border-left:3px solid transparent;transition:background .15s,color .15s;}
+.admin-side a:hover{background:var(--cream-dim);}
+.admin-side a.active{background:rgba(28,92,55,0.08);color:var(--pitch-700);border-left:3px solid var(--pitch-600);font-weight:700;}
 .admin-topbar{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;}
 @media(min-width:900px){.admin-topbar{display:none;}}
 .stat-box{background:var(--white);border-radius:var(--radius-l);padding:14px;box-shadow:var(--shadow);border-top:3px solid var(--gold);}
@@ -536,11 +558,26 @@ const S = {
 const S_RAW = { teams:{}, players:{}, matches:{}, notices:{}, sponsors:{}, gallery:{}, rules:{} };
 const SEASON_SCOPED_COLLECTIONS = ['teams','players','matches','notices','sponsors','gallery','rules'];
 let CURRENT_SEASON_ID = (function(){ try{ return localStorage.getItem('epl_current_season') || 'default'; }catch(e){ return 'default'; } })();
+// Whether THIS browser has ever explicitly picked a season. If not, we follow
+// whatever season the admin has marked "active" (see ACTIVE_SEASON listener
+// below) instead of always defaulting to the literal 'default' season — this
+// is what makes a brand-new visitor land on the tournament currently running.
+let USER_HAS_CHOSEN_SEASON = (function(){ try{ return !!localStorage.getItem('epl_current_season'); }catch(e){ return false; } })();
+let ACTIVE_SEASON_ID = 'default'; // which season the admin has marked as "active" for new visitors
 let SEASONS_LIST = {}; // { seasonId: {name, shortName, createdAt} }
 
 /* ============================================================
    SMALL UTILITIES
    ============================================================ */
+// Appends a cache-busting query param derived from the record's updatedAt
+// timestamp, so that re-uploading a logo/banner/photo to the same URL (e.g.
+// an overwrite-style upload) forces browsers to fetch the new image instead
+// of silently continuing to show an old cached copy.
+function cacheBust(url, ts){
+  if(!url) return url;
+  const v = ts || Date.now();
+  return url + (url.includes('?') ? '&' : '?') + '_v=' + v;
+}
 function escapeHtml(str){
   if(str===undefined||str===null) return '';
   return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -798,10 +835,23 @@ function bindSeasonSingletons(){
 }
 function switchSeason(seasonId){
   CURRENT_SEASON_ID = seasonId;
+  USER_HAS_CHOSEN_SEASON = true;
   try{ localStorage.setItem('epl_current_season', seasonId); }catch(e){}
   applySeasonFilter();
   bindSeasonSingletons();
   if(location.hash.startsWith('#/team/')||location.hash.startsWith('#/player/')||location.hash.startsWith('#/match/')) go('home');
+}
+function setActiveSeasonForNewVisitors(seasonId){
+  return db.ref('activeSeasonId').set(seasonId);
+}
+function deleteSeason(seasonId){
+  if(seasonId==='default') return Promise.reject(new Error('The default season can\'t be deleted.'));
+  const updates = {};
+  updates['tournamentSeasonsList/'+seasonId] = null;
+  updates['tournamentSeasons/'+seasonId] = null;
+  return db.ref().update(updates).then(()=>{
+    if(CURRENT_SEASON_ID===seasonId){ USER_HAS_CHOSEN_SEASON=false; try{ localStorage.removeItem('epl_current_season'); }catch(e){} switchSeason('default'); }
+  });
 }
 function initListeners(){
   bindSeasonSingletons();
@@ -814,6 +864,17 @@ function initListeners(){
   bindRawListener('rules','rules','rules');
   db.ref('admins').on('value', snap=>{ S.admins = snap.val()||{}; });
   db.ref('tournamentSeasonsList').on('value', snap=>{ SEASONS_LIST = snap.val()||{}; render(); });
+  db.ref('activeSeasonId').on('value', snap=>{
+    ACTIVE_SEASON_ID = snap.val() || 'default';
+    // A visitor who has never manually picked a season follows whatever the
+    // admin has marked active — so a brand-new visitor lands on the season
+    // currently running, not always on the literal 'default' one.
+    if(!USER_HAS_CHOSEN_SEASON && ACTIVE_SEASON_ID !== CURRENT_SEASON_ID){
+      CURRENT_SEASON_ID = ACTIVE_SEASON_ID;
+      applySeasonFilter();
+      bindSeasonSingletons();
+    }
+  });
 }
 
 /* ============================================================
@@ -876,7 +937,7 @@ function renderHeader(){
   document.getElementById('hdrName').textContent = s.shortName || s.name || 'EPL';
   document.getElementById('hdrSeason').textContent = s.season || 'Eid Premier League';
   const logo = document.getElementById('hdrLogo');
-  if(s.logo){ logo.src = s.logo; logo.style.display='block'; } else { logo.style.display='none'; }
+  if(s.logo){ logo.src = cacheBust(s.logo, s.updatedAt); logo.style.display='block'; } else { logo.style.display='none'; }
 }
 
 /* ============================================================
@@ -1078,8 +1139,8 @@ function viewHome(){
 
   if(!teams.length && !matches.length && !players.length){
     return `
-      <div class="hero" ${s.banner?`style="background-image:url('${s.banner}')"`:''}>
-        ${s.logo?`<img class="hero-logo" src="${s.logo}">`:''}
+      <div class="hero" ${s.banner?`style="background-image:url('${cacheBust(s.banner,s.updatedAt)}')"`:''}>
+        ${s.logo?`<img class="hero-logo" src="${cacheBust(s.logo,s.updatedAt)}">`:''}
         <h1>${escapeHtml(s.name||'EPL — Eid Premier League')}</h1>
         <p>${escapeHtml(s.season||'Season 1')} ${s.venue?'· '+escapeHtml(s.venue):''}</p>
       </div>
@@ -1092,8 +1153,8 @@ function viewHome(){
   }
 
   return `
-    <div class="hero" ${s.banner?`style="background-image:url('${s.banner}')"`:''}>
-      ${s.logo?`<img class="hero-logo" src="${s.logo}">`:''}
+    <div class="hero" ${s.banner?`style="background-image:url('${cacheBust(s.banner,s.updatedAt)}')"`:''}>
+      ${s.logo?`<img class="hero-logo" src="${cacheBust(s.logo,s.updatedAt)}">`:''}
       <h1>${escapeHtml(s.name||'EPL — Eid Premier League')}</h1>
       <p>${escapeHtml(s.season||'Season 1')} ${s.venue?'· '+escapeHtml(s.venue):''} ${s.status?`· <span class="pill pill-${s.status}">${s.status}</span>`:''}</p>
       <div class="hero-stats">
@@ -1136,8 +1197,8 @@ function viewHome(){
     ${(topScorer && topScorer.runs>0) || (topWicket && topWicket.wickets>0) ? `
     <div class="section-title"><h2>Top Players</h2><a class="link-more" href="#/stats">Full stats</a></div>
     <div class="grid grid-2">
-      ${topScorer && topScorer.runs>0 ? `<div class="card card-tight"><span style="font-size:11px;color:var(--ink-soft);font-weight:700;">TOP RUN SCORER</span><div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><img class="avatar" src="${topScorer.photo||''}" onerror="this.style.visibility='hidden'"><div><b style="display:block;">${escapeHtml(topScorer.name)}</b><span style="font-size:12.5px;color:var(--ink-soft);">${topScorer.runs} runs</span></div></div></div>`:''}
-      ${topWicket && topWicket.wickets>0 ? `<div class="card card-tight"><span style="font-size:11px;color:var(--ink-soft);font-weight:700;">TOP WICKET TAKER</span><div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><img class="avatar" src="${topWicket.photo||''}" onerror="this.style.visibility='hidden'"><div><b style="display:block;">${escapeHtml(topWicket.name)}</b><span style="font-size:12.5px;color:var(--ink-soft);">${topWicket.wickets} wickets</span></div></div></div>`:''}
+      ${topScorer && topScorer.runs>0 ? `<div class="card card-tight"><span style="font-size:11px;color:var(--ink-soft);font-weight:700;">TOP RUN SCORER</span><div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><img class="avatar" src="${cacheBust(topScorer.photo||'', topScorer.updatedAt)}" onerror="this.style.visibility='hidden'"><div><b style="display:block;">${escapeHtml(topScorer.name)}</b><span style="font-size:12.5px;color:var(--ink-soft);">${topScorer.runs} runs</span></div></div></div>`:''}
+      ${topWicket && topWicket.wickets>0 ? `<div class="card card-tight"><span style="font-size:11px;color:var(--ink-soft);font-weight:700;">TOP WICKET TAKER</span><div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><img class="avatar" src="${cacheBust(topWicket.photo||'', topWicket.updatedAt)}" onerror="this.style.visibility='hidden'"><div><b style="display:block;">${escapeHtml(topWicket.name)}</b><span style="font-size:12.5px;color:var(--ink-soft);">${topWicket.wickets} wickets</span></div></div></div>`:''}
     </div>` : ''}
 
     ${notices.length ? `
@@ -1147,7 +1208,7 @@ function viewHome(){
     ${sponsors.length ? `
     <div class="section-title"><h2>Sponsors</h2></div>
     <div class="card" style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center;">
-      ${sponsors.map(sp=>`<img src="${sp.logo}" alt="${escapeHtml(sp.name)}" style="height:36px;object-fit:contain;" title="${escapeHtml(sp.name)}">`).join('')}
+      ${sponsors.map(sp=>`<img src="${cacheBust(sp.logo, sp.updatedAt)}" alt="${escapeHtml(sp.name)}" style="height:36px;object-fit:contain;" title="${escapeHtml(sp.name)}">`).join('')}
     </div>` : ''}
   `;
 }
@@ -1169,11 +1230,11 @@ function renderMatchCard(m){
     </div>
     <div class="mc-body">
       <div class="mc-team-row">
-        <div class="mc-team"><img class="avatar-sm" src="${t1.logo||''}" onerror="this.style.visibility='hidden'"><span>${escapeHtml(t1.shortName||t1.name||'TBD')}</span></div>
+        <div class="mc-team"><img class="avatar-sm" src="${cacheBust(t1.logo||'', t1.updatedAt)}" onerror="this.style.visibility='hidden'"><span>${escapeHtml(t1.shortName||t1.name||'TBD')}</span></div>
         ${scoreFor(m.team1Id, inn1) || scoreFor(m.team1Id, inn2) || ''}
       </div>
       <div class="mc-team-row" style="margin-bottom:0;">
-        <div class="mc-team"><img class="avatar-sm" src="${t2.logo||''}" onerror="this.style.visibility='hidden'"><span>${escapeHtml(t2.shortName||t2.name||'TBD')}</span></div>
+        <div class="mc-team"><img class="avatar-sm" src="${cacheBust(t2.logo||'', t2.updatedAt)}" onerror="this.style.visibility='hidden'"><span>${escapeHtml(t2.shortName||t2.name||'TBD')}</span></div>
         ${scoreFor(m.team2Id, inn1) || scoreFor(m.team2Id, inn2) || ''}
       </div>
       <div class="mc-foot">${m.status==='completed'? matchResultText(m) : (m.venue||'Venue TBA')}</div>
@@ -1182,7 +1243,7 @@ function renderMatchCard(m){
 }
 function renderTeamMiniCard(t){
   return `<a href="#/team/${t.id}" class="card card-tight" style="text-align:center;">
-    <img class="avatar" src="${t.logo||''}" style="margin:0 auto 6px;" onerror="this.style.visibility='hidden'">
+    <img class="avatar" src="${cacheBust(t.logo||'', t.updatedAt)}" style="margin:0 auto 6px;" onerror="this.style.visibility='hidden'">
     <b style="font-size:12.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.shortName||t.name)}</b>
   </a>`;
 }
@@ -1199,7 +1260,7 @@ function viewTeams(){
       ${teams.map(t=>{
         const players = objToArr(S.players).filter(p=>p.teamId===t.id);
         return `<a href="#/team/${t.id}" class="card card-tight" style="text-align:center;">
-          <img class="avatar-lg" src="${t.logo||''}" style="margin:0 auto 8px;border-radius:12px;object-fit:cover;" onerror="this.style.visibility='hidden'">
+          <img class="avatar-lg" src="${cacheBust(t.logo||'', t.updatedAt)}" style="margin:0 auto 8px;border-radius:12px;object-fit:cover;" onerror="this.style.visibility='hidden'">
           <b style="font-size:13.5px;display:block;">${escapeHtml(t.name)}</b>
           <span style="font-size:11.5px;color:var(--ink-soft);">${players.length} players</span>
         </a>`;
@@ -1214,7 +1275,7 @@ function viewTeamDetail(teamId){
   const row = computePointsTable().find(r=>r.teamId===teamId) || {};
   return `
     <div class="card" style="text-align:center;margin-bottom:14px;${t.banner?`background:linear-gradient(rgba(10,46,31,.75),rgba(10,46,31,.75)),url('${t.banner}') center/cover;color:#fff;`:''}">
-      <img class="avatar-lg" src="${t.logo||''}" style="margin:0 auto 8px;border-radius:14px;" onerror="this.style.visibility='hidden'">
+      <img class="avatar-lg" src="${cacheBust(t.logo||'', t.updatedAt)}" style="margin:0 auto 8px;border-radius:14px;" onerror="this.style.visibility='hidden'">
       <h2 style="font-size:19px;">${escapeHtml(t.name)}</h2>
       <p style="font-size:12.5px;color:${t.banner?'#e6ded0':'var(--ink-soft)'};margin-top:2px;">${escapeHtml(t.owner? 'Owner: '+t.owner:'')} ${t.captain?' · Captain: '+escapeHtml(t.captain):''}</p>
       <a data-wa="Check out ${t.name} in ${S.settings.name||'EPL'}!" href="#" class="btn btn-sm btn-gold" style="margin-top:10px;">📲 Share Team</a>
@@ -1258,7 +1319,7 @@ function renderPlayerMiniCard(p, teamsArr){
   const team = S.teams[p.teamId];
   return `<a href="#/player/${p.id}" class="card card-tight player-card" data-name="${escapeHtml((p.name||'').toLowerCase())}" data-role="${p.role||''}" style="text-align:center;position:relative;">
     ${p.category?`<span class="pill pill-upcoming" style="position:absolute;top:6px;right:6px;font-size:9px;padding:2px 6px;">${escapeHtml(p.category)}</span>`:''}
-    <img class="avatar" src="${p.photo||''}" style="margin:0 auto 6px;" onerror="this.style.visibility='hidden'">
+    <img class="avatar" src="${cacheBust(p.photo||'', p.updatedAt)}" style="margin:0 auto 6px;" onerror="this.style.visibility='hidden'">
     <b style="font-size:12.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.name)}</b>
     <span style="font-size:10.5px;color:var(--ink-soft);">${escapeHtml(p.role||'')} ${team?'· '+escapeHtml(team.shortName||team.name):''}</span>
   </a>`;
@@ -1288,7 +1349,7 @@ function viewPlayerDetail(playerId){
   const stats = computePlayerStats().find(s=>s.playerId===playerId) || {};
   return `
     <div class="card" style="text-align:center;margin-bottom:14px;">
-      <img class="avatar-lg" src="${p.photo||''}" style="margin:0 auto 8px;" onerror="this.style.visibility='hidden'">
+      <img class="avatar-lg" src="${cacheBust(p.photo||'', p.updatedAt)}" style="margin:0 auto 8px;" onerror="this.style.visibility='hidden'">
       <h2 style="font-size:19px;">${escapeHtml(p.name)}</h2>
       <p style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(p.role||'')} ${p.jersey?' · #'+escapeHtml(p.jersey):''}</p>
       ${team?`<a href="#/team/${team.id}" class="pill pill-upcoming" style="margin-top:8px;">${escapeHtml(team.name)}</a>`:''}
@@ -1336,14 +1397,14 @@ function renderAuctionMiniCard(){
   if(!p) return '';
   const team = S.teams[a.currentTeamId];
   return `<div class="auction-stage" style="margin-bottom:16px;">
-    <img class="auction-photo" src="${p.photo||''}" onerror="this.style.visibility='hidden'">
+    <img class="auction-photo" src="${cacheBust(p.photo||'', p.updatedAt)}" onerror="this.style.visibility='hidden'">
     <h3>${escapeHtml(p.name)}</h3>
     <div class="role">${escapeHtml(p.role||'')} ${p.category?'· Category '+escapeHtml(p.category):''}</div>
     <div class="auction-price-row">
       <div><b>${money(a.baseIncrement? p.basePrice : p.basePrice)}</b><span>BASE PRICE</span></div>
       <div><b>${money(a.currentBid||p.basePrice)}</b><span>CURRENT BID</span></div>
     </div>
-    ${team? `<div class="auction-team-chip"><img class="avatar-sm" src="${team.logo||''}" style="border-radius:50%;">${escapeHtml(team.name)}</div>` : `<span style="font-size:12.5px;color:#cfe6d8;">No bid yet</span>`}
+    ${team? `<div class="auction-team-chip"><img class="avatar-sm" src="${cacheBust(team.logo||'', team.updatedAt)}" style="border-radius:50%;">${escapeHtml(team.name)}</div>` : `<span style="font-size:12.5px;color:#cfe6d8;">No bid yet</span>`}
     <button class="btn btn-outline btn-sm" id="auctionCardBtnPublic" style="margin-top:10px;">📥 Download Player Card</button>
   </div>`;
 }
@@ -1409,7 +1470,7 @@ function renderAuctionTabBody(tab){
 function renderAuctionPlayerCard(p){
   const team = S.teams[p.teamId];
   return `<a href="#/player/${p.id}" class="card card-tight" style="text-align:center;">
-    <img class="avatar" src="${p.photo||''}" style="margin:0 auto 6px;" onerror="this.style.visibility='hidden'">
+    <img class="avatar" src="${cacheBust(p.photo||'', p.updatedAt)}" style="margin:0 auto 6px;" onerror="this.style.visibility='hidden'">
     <b style="font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.name)}</b>
     ${p.auctionStatus==='sold'? `<span class="pill pill-sold" style="margin-top:4px;">${money(p.auctionPrice)}</span>` : p.auctionStatus==='direct'? `<span class="pill pill-upcoming" style="margin-top:4px;">Direct Sign</span>` : p.auctionStatus==='unsold'? `<span class="pill pill-unsold" style="margin-top:4px;">Unsold</span>` : `<span style="font-size:10.5px;color:var(--ink-soft);">Base ${money(p.basePrice)}</span>`}
     ${team? `<span style="display:block;font-size:10px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(team.shortName||team.name)}</span>`:''}
@@ -1812,8 +1873,8 @@ function viewMatchDetail(matchId){
         <span class="pill pill-${m.status}">${m.status}</span>
         <span style="font-size:12px;color:var(--ink-soft);">${fmtDate(m.date)} ${m.time||''}</span>
       </div>
-      <div class="mc-team-row"><div class="mc-team"><img class="avatar-sm" src="${t1.logo||''}"><span>${escapeHtml(t1.name||'TBD')}</span></div>${m.innings1&&m.innings1.battingTeamId===m.team1Id?`<span class="mc-score">${m.innings1.runs}/${m.innings1.wickets} (${fmtOvers(m.innings1.balls)})</span>`:(m.innings2&&m.innings2.battingTeamId===m.team1Id?`<span class="mc-score">${m.innings2.runs}/${m.innings2.wickets} (${fmtOvers(m.innings2.balls)})</span>`:'')}</div>
-      <div class="mc-team-row" style="margin-bottom:0;"><div class="mc-team"><img class="avatar-sm" src="${t2.logo||''}"><span>${escapeHtml(t2.name||'TBD')}</span></div>${m.innings1&&m.innings1.battingTeamId===m.team2Id?`<span class="mc-score">${m.innings1.runs}/${m.innings1.wickets} (${fmtOvers(m.innings1.balls)})</span>`:(m.innings2&&m.innings2.battingTeamId===m.team2Id?`<span class="mc-score">${m.innings2.runs}/${m.innings2.wickets} (${fmtOvers(m.innings2.balls)})</span>`:'')}</div>
+      <div class="mc-team-row"><div class="mc-team"><img class="avatar-sm" src="${cacheBust(t1.logo||'', t1.updatedAt)}"><span>${escapeHtml(t1.name||'TBD')}</span></div>${m.innings1&&m.innings1.battingTeamId===m.team1Id?`<span class="mc-score">${m.innings1.runs}/${m.innings1.wickets} (${fmtOvers(m.innings1.balls)})</span>`:(m.innings2&&m.innings2.battingTeamId===m.team1Id?`<span class="mc-score">${m.innings2.runs}/${m.innings2.wickets} (${fmtOvers(m.innings2.balls)})</span>`:'')}</div>
+      <div class="mc-team-row" style="margin-bottom:0;"><div class="mc-team"><img class="avatar-sm" src="${cacheBust(t2.logo||'', t2.updatedAt)}"><span>${escapeHtml(t2.name||'TBD')}</span></div>${m.innings1&&m.innings1.battingTeamId===m.team2Id?`<span class="mc-score">${m.innings1.runs}/${m.innings1.wickets} (${fmtOvers(m.innings1.balls)})</span>`:(m.innings2&&m.innings2.battingTeamId===m.team2Id?`<span class="mc-score">${m.innings2.runs}/${m.innings2.wickets} (${fmtOvers(m.innings2.balls)})</span>`:'')}</div>
       <div class="mc-foot">${m.venue||''} ${m.status==='completed'?'· '+matchResultText(m):''}</div>
       ${m.status==='completed'? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-outline" id="matchPdfBtn" data-match="${m.id}">📄 Download Match Summary PDF</button></div>` : ''}
     </div>
@@ -1873,7 +1934,7 @@ function renderPointsTableHtml(table, compact){
     <tbody>
       ${table.map((r,i)=>`<tr>
         <td>${i+1}</td>
-        <td><div style="display:flex;align-items:center;gap:6px;"><img class="avatar-sm" src="${r.logo}" onerror="this.style.visibility='hidden'"><a href="#/team/${r.teamId}" style="font-weight:700;">${escapeHtml(r.shortName)}</a></div></td>
+        <td><div style="display:flex;align-items:center;gap:6px;"><img class="avatar-sm" src="${cacheBust(r.logo, r.updatedAt)}" onerror="this.style.visibility='hidden'"><a href="#/team/${r.teamId}" style="font-weight:700;">${escapeHtml(r.shortName)}</a></div></td>
         <td>${r.played}</td><td>${r.won}</td><td>${r.lost}</td>
         ${compact?'':`<td>${r.tie}</td><td>${r.noResult}</td>`}
         <td style="font-weight:800;">${r.points}</td>
@@ -1906,7 +1967,7 @@ function viewStats(){
     if(!list.length) return '';
     return `<div class="section-title" style="align-items:center;"><h2>${title}</h2><button class="btn btn-sm btn-outline lb-card-btn" data-lb="${key}">📥 Card</button></div><div class="card" style="padding:0;">
       ${list.slice(0,5).map((s,i)=>`<div class="admin-item-row"><b style="width:20px;color:var(--ink-soft);">${i+1}</b>
-        <img class="avatar-sm" src="${s.photo}" onerror="this.style.visibility='hidden'">
+        <img class="avatar-sm" src="${cacheBust(s.photo, s.updatedAt)}" onerror="this.style.visibility='hidden'">
         <div class="aif-main"><b>${escapeHtml(s.name)}</b><span>${S.teams[s.teamId]?escapeHtml(S.teams[s.teamId].shortName||S.teams[s.teamId].name):''}</span></div>
         <b style="font-family:var(--font-display);">${val(s)}</b>
       </div>`).join('')}
@@ -1993,7 +2054,7 @@ function viewSponsors(){
     <div class="section-title"><h2>Our Sponsors</h2></div>
     <div class="grid grid-2">
       ${sponsors.map(sp=>`<div class="card" style="text-align:center;">
-        <img src="${sp.logo}" style="height:56px;object-fit:contain;margin:0 auto 8px;">
+        <img src="${cacheBust(sp.logo, sp.updatedAt)}" style="height:56px;object-fit:contain;margin:0 auto 8px;">
         <b style="font-size:13.5px;display:block;">${escapeHtml(sp.name)}</b>
         <span style="font-size:11px;color:var(--ink-soft);">${escapeHtml(sp.type||'')}</span>
         ${sp.website?`<a href="${sp.website}" target="_blank" rel="noopener" style="display:block;font-size:11.5px;color:var(--pitch-700);font-weight:700;margin-top:6px;">Visit Website →</a>`:''}
@@ -2084,12 +2145,19 @@ function renderAdminArea(app){
   const seasonOptions = [['default', S.settings.name ? S.settings.name+' (current)' : 'Default Season']]
     .concat(Object.keys(SEASONS_LIST).map(sid=>[sid, SEASONS_LIST[sid].name||sid]));
   app.innerHTML = `
-    <div class="card card-tight" style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <b style="font-size:12px;color:var(--ink-soft);">SEASON:</b>
-      <select id="seasonSwitcher" style="flex:1;min-width:140px;padding:7px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;">
-        ${seasonOptions.map(([sid,label])=>`<option value="${sid}" ${CURRENT_SEASON_ID===sid?'selected':''}>${escapeHtml(label)}</option>`).join('')}
-      </select>
-      <button class="btn btn-sm btn-gold" id="newSeasonBtn">+ New Season</button>
+    <div class="card card-tight" style="margin-bottom:12px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <b style="font-size:12px;color:var(--ink-soft);">SEASON:</b>
+        <select id="seasonSwitcher" style="flex:1;min-width:140px;padding:7px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;">
+          ${seasonOptions.map(([sid,label])=>`<option value="${sid}" ${CURRENT_SEASON_ID===sid?'selected':''}>${escapeHtml(label)}</option>`).join('')}
+        </select>
+        <button class="btn btn-sm btn-gold" id="newSeasonBtn">+ New</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+        <span style="font-size:11.5px;color:var(--ink-soft);">${ACTIVE_SEASON_ID===CURRENT_SEASON_ID? '⭐ This is the active season — new visitors see this one by default.' : '⚠️ New visitors currently see a different season by default.'}</span>
+        ${ACTIVE_SEASON_ID!==CURRENT_SEASON_ID ? `<button class="btn btn-sm btn-outline" id="setActiveSeasonBtn">⭐ Set as Active for New Visitors</button>` : ''}
+        ${CURRENT_SEASON_ID!=='default' ? `<button class="btn btn-sm btn-outline" id="deleteSeasonBtn" style="color:var(--red);border-color:var(--red);">🗑️ Delete This Season</button>` : ''}
+      </div>
     </div>
     <div class="admin-topbar">
       ${ADMIN_NAV.map(n=>`<button class="btn btn-sm ${sub===n.r?'btn-primary':'btn-ghost'}" style="flex-shrink:0;" data-ar="${n.r}">${n.ic} ${n.label}</button>`).join('')}
@@ -2108,6 +2176,16 @@ function renderAdminArea(app){
   const lo2 = document.getElementById('adminLogoutSide'); if(lo2) lo2.onclick = (e)=>{ e.preventDefault(); doLogout(); };
   document.getElementById('seasonSwitcher').onchange = (e)=> switchSeason(e.target.value);
   document.getElementById('newSeasonBtn').onclick = openNewSeasonModal;
+  const activeBtn = document.getElementById('setActiveSeasonBtn');
+  if(activeBtn) activeBtn.onclick = ()=>{
+    setActiveSeasonForNewVisitors(CURRENT_SEASON_ID).then(()=>toast('This season is now shown to new visitors by default','success')).catch(err=>toast(err.message,'error'));
+  };
+  const delBtn = document.getElementById('deleteSeasonBtn');
+  if(delBtn) delBtn.onclick = ()=>{
+    const label = (SEASONS_LIST[CURRENT_SEASON_ID]||{}).name || CURRENT_SEASON_ID;
+    if(!confirm('Delete season "'+label+'"? This permanently removes its teams, players, matches, notices, gallery and settings. This cannot be undone.')) return;
+    deleteSeason(CURRENT_SEASON_ID).then(()=>toast('Season deleted','success')).catch(err=>toast(err.message,'error'));
+  };
 
   const main = document.getElementById('adminMain');
   switch(sub){
@@ -2260,7 +2338,7 @@ function renderAdminSettings(main){
         <h4>Branding</h4>
         <div class="field"><label>Tournament Logo</label>
           <div class="img-upload" id="upLogo">
-            <img src="${s.logo||''}" style="${s.logo?'':'display:none;'}">
+            <img src="${cacheBust(s.logo||'', s.updatedAt)}" style="${s.logo?'':'display:none;'}">
             <input type="file" accept="image/*">
             <div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${s.logo?'Uploaded ✓ (tap to change)':'Tap to upload logo'}</div>
             <div class="iu-progress" style="display:none;"><i></i></div>
@@ -2268,7 +2346,7 @@ function renderAdminSettings(main){
         </div>
         <div class="field"><label>Tournament Banner</label>
           <div class="img-upload" id="upBanner">
-            <img src="${s.banner||''}" style="${s.banner?'':'display:none;'}">
+            <img src="${cacheBust(s.banner||'', s.updatedAt)}" style="${s.banner?'':'display:none;'}">
             <input type="file" accept="image/*">
             <div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${s.banner?'Uploaded ✓ (tap to change)':'Tap to upload banner'}</div>
             <div class="iu-progress" style="display:none;"><i></i></div>
@@ -2353,7 +2431,7 @@ function renderAdminTeams(main){
       ${teams.length? teams.map(t=>{
         const pCount = objToArr(S.players).filter(p=>p.teamId===t.id).length;
         return `<div class="admin-item-row">
-          <img class="avatar" src="${t.logo||''}" onerror="this.style.visibility='hidden'">
+          <img class="avatar" src="${cacheBust(t.logo||'', t.updatedAt)}" onerror="this.style.visibility='hidden'">
           <div class="aif-main"><b>${escapeHtml(t.name)} ${t.demo?'<span class=\"pill pill-demo\">DEMO</span>':''}</b><span>${pCount} players ${t.captain?'· Captain: '+escapeHtml(t.captain):''}</span></div>
           <div class="aif-actions">
             <button class="btn btn-sm btn-gold" data-sign="${t.id}" title="Directly sign a player to this team">+ Sign Player</button>
@@ -2384,10 +2462,10 @@ function openTeamModal(t={}, id=null){
     <div class="modal-head"><h3>${id?'Edit':'Add'} Team</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <form id="teamForm">
       <div class="field"><label>Team Logo</label>
-        <div class="img-upload" id="upTeamLogo"><img src="${t.logo||''}" style="${t.logo?'':'display:none;'}"><input type="file" accept="image/*"><div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${t.logo?'Uploaded ✓':'Tap to upload'}</div><div class="iu-progress" style="display:none;"><i></i></div></div>
+        <div class="img-upload" id="upTeamLogo"><img src="${cacheBust(t.logo||'', t.updatedAt)}" style="${t.logo?'':'display:none;'}"><input type="file" accept="image/*"><div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${t.logo?'Uploaded ✓':'Tap to upload'}</div><div class="iu-progress" style="display:none;"><i></i></div></div>
       </div>
       <div class="field"><label>Team Banner</label>
-        <div class="img-upload" id="upTeamBanner"><img src="${t.banner||''}" style="${t.banner?'':'display:none;'}"><input type="file" accept="image/*"><div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${t.banner?'Uploaded ✓':'Tap to upload'}</div><div class="iu-progress" style="display:none;"><i></i></div></div>
+        <div class="img-upload" id="upTeamBanner"><img src="${cacheBust(t.banner||'', t.updatedAt)}" style="${t.banner?'':'display:none;'}"><input type="file" accept="image/*"><div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${t.banner?'Uploaded ✓':'Tap to upload'}</div><div class="iu-progress" style="display:none;"><i></i></div></div>
       </div>
       <div class="field"><label>Team Name *</label><input type="text" id="tName" value="${escapeHtml(t.name||'')}" required></div>
       <div class="field-row">
@@ -2607,7 +2685,7 @@ function renderAdminPlayerRow(p){
     p.auctionStatus==='direct' ? `<span class="pill pill-upcoming">Direct ${p.auctionPrice?money(p.auctionPrice):''}</span>` :
     p.auctionStatus==='unsold' ? `<span class="pill pill-unsold">Unsold</span>` : `<span class="pill pill-postponed">Pending</span>`;
   return `<div class="admin-item-row">
-    <img class="avatar" src="${p.photo||''}" onerror="this.style.visibility='hidden'">
+    <img class="avatar" src="${cacheBust(p.photo||'', p.updatedAt)}" onerror="this.style.visibility='hidden'">
     <div class="aif-main"><b>${escapeHtml(p.name)} ${p.demo?'<span class="pill pill-demo">DEMO</span>':''}</b><span>${escapeHtml(p.role||'')} ${p.category?'· '+escapeHtml(p.category):''} ${team?'· '+escapeHtml(team.shortName||team.name):'· Unassigned'}</span></div>
     ${statusBadge}
     <div class="aif-actions">
@@ -2635,7 +2713,7 @@ function openPlayerModal(p={}, id=null){
     <div class="modal-head"><h3>${id?'Edit':'Add'} Player</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <form id="playerForm">
       <div class="field"><label>Player Photo</label>
-        <div class="img-upload" id="upPlayerPhoto"><img src="${p.photo||''}" style="${p.photo?'':'display:none;'}"><input type="file" accept="image/*"><div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${p.photo?'Uploaded ✓':'Tap to upload'}</div><div class="iu-progress" style="display:none;"><i></i></div></div>
+        <div class="img-upload" id="upPlayerPhoto"><img src="${cacheBust(p.photo||'', p.updatedAt)}" style="${p.photo?'':'display:none;'}"><input type="file" accept="image/*"><div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${p.photo?'Uploaded ✓':'Tap to upload'}</div><div class="iu-progress" style="display:none;"><i></i></div></div>
       </div>
       <div class="field"><label>Full Name *</label><input type="text" id="pName" value="${escapeHtml(p.name||'')}" required></div>
       <div class="field-row">
@@ -2719,7 +2797,7 @@ function renderAdminAuction(main){
 
     ${current ? `
     <div class="auction-stage" style="margin-bottom:14px;">
-      <img class="auction-photo" src="${current.photo||''}" onerror="this.style.visibility='hidden'">
+      <img class="auction-photo" src="${cacheBust(current.photo||'', current.updatedAt)}" onerror="this.style.visibility='hidden'">
       <h3>${escapeHtml(current.name)}</h3>
       <div class="role">${escapeHtml(current.role||'')} ${current.category?'· Category '+escapeHtml(current.category):''}</div>
       <div class="auction-price-row">
@@ -2760,7 +2838,7 @@ function renderAdminAuction(main){
     <div class="section-title"><h2>Auction Pool<span class="tag-count">${pool.length}</span></h2></div>
     <div class="grid grid-4" style="margin-bottom:16px;">
       ${pool.map(p=>`<div class="card card-tight" style="text-align:center;${a.currentPlayerId===p.id?'outline:2px solid var(--gold);':''}">
-        <img class="avatar" src="${p.photo||''}" style="margin:0 auto 4px;" onerror="this.style.visibility='hidden'">
+        <img class="avatar" src="${cacheBust(p.photo||'', p.updatedAt)}" style="margin:0 auto 4px;" onerror="this.style.visibility='hidden'">
         <b style="font-size:11.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.name)}</b>
         <span style="font-size:10px;color:var(--ink-soft);">${money(p.basePrice)} ${p.category?'· '+escapeHtml(p.category):''}</span>
       </div>`).join('') || `<p style="grid-column:1/-1;color:var(--ink-soft);font-size:13px;">Auction pool empty for this category.</p>`}
@@ -3234,22 +3312,22 @@ function renderScoringConsole(m, inn){
     </div>
     <b style="font-size:12px;color:var(--ink-soft);">RUNS OFF BAT</b>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 14px;">
-      ${[0,1,2,3,4,6].map(r=>`<button class="btn ${r===4?'btn-outline':r===6?'btn-gold':'btn-primary'} run-btn" data-run="${r}" style="min-height:52px;font-size:18px;font-weight:800;">${r}</button>`).join('')}
+      ${[0,1,2,3,4,6].map(r=>`<button class="btn ${r===4||r===6?'btn-primary':'btn-outline'} run-btn" data-run="${r}" style="min-height:52px;font-size:18px;font-weight:800;">${r}</button>`).join('')}
       <button class="btn btn-danger run-btn-wicket" id="wicketBtn" style="min-height:52px;font-size:16px;font-weight:800;">W</button>
       <button class="btn btn-outline" id="undoBtn" style="min-height:52px;font-size:16px;">↺</button>
     </div>
     <b style="font-size:12px;color:var(--ink-soft);">EXTRAS</b>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 6px;">
-      <button class="btn btn-gold btn-sm extra-btn" data-extra="wide">Wide</button>
-      <button class="btn btn-gold btn-sm extra-btn" data-extra="noball">No Ball</button>
-      <button class="btn btn-gold btn-sm extra-btn" data-extra="bye">Bye</button>
-      <button class="btn btn-gold btn-sm extra-btn" data-extra="legbye">Leg Bye</button>
+      <button class="btn btn-outline btn-sm extra-btn" data-extra="wide">Wide</button>
+      <button class="btn btn-outline btn-sm extra-btn" data-extra="noball">No Ball</button>
+      <button class="btn btn-outline btn-sm extra-btn" data-extra="bye">Bye</button>
+      <button class="btn btn-outline btn-sm extra-btn" data-extra="legbye">Leg Bye</button>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
       <button class="btn btn-ghost btn-sm" id="endOverBtn">Force End Over</button>
       <button class="btn btn-ghost btn-sm" id="editBallBtn">✏️ Edit / Delete Last Ball</button>
       <button class="btn btn-ghost btn-sm" id="endInningsBtn">⏭️ End Innings</button>
-      ${m.currentInnings===2 || m.innings2 ? `<button class="btn btn-primary btn-sm" id="finishMatchBtn">🏁 Finish Match</button>` : ''}
+      ${m.currentInnings===2 || m.innings2 ? `<button class="btn btn-gold btn-sm" id="finishMatchBtn">🏁 Finish Match</button>` : ''}
     </div>
   </div>`;
 }
@@ -3758,7 +3836,7 @@ function renderAdminSponsors(main){
     <div class="section-title" style="margin-top:0;"><h2>Sponsors<span class="tag-count">${sponsors.length}</span></h2><button class="btn btn-primary btn-sm" id="addBtn">+ Add Sponsor</button></div>
     <div class="card" style="padding:0;">
       ${sponsors.length? sponsors.map(sp=>`<div class="admin-item-row">
-        <img class="avatar" src="${sp.logo||''}" onerror="this.style.visibility='hidden'">
+        <img class="avatar" src="${cacheBust(sp.logo||'', sp.updatedAt)}" onerror="this.style.visibility='hidden'">
         <div class="aif-main"><b>${escapeHtml(sp.name)}</b><span>${escapeHtml(sp.type||'')}</span></div>
         <div class="aif-actions"><button class="btn btn-sm btn-ghost" data-edit="${sp.id}">Edit</button><button class="btn btn-sm btn-danger" data-del="${sp.id}">Delete</button></div>
       </div>`).join('') : `<div class="empty-state"><div class="es-icon">🤝</div><h3>No sponsors yet</h3><p>Add sponsor logos and details.</p></div>`}
@@ -3771,7 +3849,7 @@ function openSponsorModal(sp={}, id=null){
   openModal(`
     <div class="modal-head"><h3>${id?'Edit':'Add'} Sponsor</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <form id="spForm">
-      <div class="field"><label>Logo</label><div class="img-upload" id="upSponsor"><img src="${sp.logo||''}" style="${sp.logo?'':'display:none;'}"><input type="file" accept="image/*"><div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${sp.logo?'Uploaded ✓':'Tap to upload'}</div><div class="iu-progress" style="display:none;"><i></i></div></div></div>
+      <div class="field"><label>Logo</label><div class="img-upload" id="upSponsor"><img src="${cacheBust(sp.logo||'', sp.updatedAt)}" style="${sp.logo?'':'display:none;'}"><input type="file" accept="image/*"><div class="iu-label" style="font-size:12px;font-weight:700;color:var(--pitch-700);">${sp.logo?'Uploaded ✓':'Tap to upload'}</div><div class="iu-progress" style="display:none;"><i></i></div></div></div>
       <div class="field"><label>Sponsor Name *</label><input type="text" id="spName" value="${escapeHtml(sp.name||'')}" required></div>
       <div class="field-row">
         <div class="field"><label>Type</label><input type="text" id="spType" value="${escapeHtml(sp.type||'')}" placeholder="Title Sponsor"></div>
@@ -4671,6 +4749,39 @@ function init(){
   }
 }
 init();
+
+/* ============================================================
+   UPDATE CHECKER — detects when a newer version of this page has
+   been deployed (GitHub Pages / Netlify serve this single file
+   with browser-level caching we can't fully control via headers
+   alone) and shows a small "tap to refresh" banner instead of
+   silently leaving visitors stuck on a stale cached copy.
+   ============================================================ */
+(function(){
+  const CURRENT_BUILD = document.querySelector('meta[name="app-build"]')?.getAttribute('content') || '';
+  function checkForUpdate(){
+    try{
+      const url = location.pathname + location.search + (location.search? '&':'?') + '_cb=' + Date.now();
+      fetch(url, {cache:'no-store'}).then(r=>r.text()).then(html=>{
+        const m = html.match(/<meta\s+name=["']app-build["']\s+content=["']([^"']+)["']/i);
+        const latestBuild = m ? m[1] : '';
+        if(latestBuild && CURRENT_BUILD && latestBuild!==CURRENT_BUILD && !document.getElementById('updateBanner')){
+          const bar = document.createElement('div');
+          bar.id = 'updateBanner';
+          bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:200;background:#0a2e1f;color:#f0d488;padding:12px 16px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 -2px 10px rgba(0,0,0,.3);';
+          bar.textContent = '🔄 A newer version of this app is available — tap here to refresh';
+          bar.onclick = ()=> location.reload(true);
+          document.body.appendChild(bar);
+        }
+      }).catch(()=>{}); // silent — this is a best-effort background check, never blocks the app
+    }catch(e){}
+  }
+  // Check shortly after load, then periodically, and whenever the tab regains focus
+  // (e.g. an admin switching back after the tournament owner pushed an update).
+  setTimeout(checkForUpdate, 4000);
+  setInterval(checkForUpdate, 3*60*1000);
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkForUpdate(); });
+})();
 </script>
 </body>
 </html>
