@@ -1356,6 +1356,7 @@ function viewPlayerDetail(playerId){
       <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
         <a data-wa="Check out ${p.name}'s profile in ${S.settings.name||'EPL'}!" href="#" class="btn btn-sm btn-gold">📲 Share Profile</a>
         <button class="btn btn-sm btn-outline" id="playerCardBtn" data-player="${p.id}">🖼️ Photo Card</button>
+        ${p.auctionStatus==='sold' ? `<button class="btn btn-sm btn-outline" id="soldCardBtn" data-player="${p.id}">🏷️ Sold Card</button>` : ''}
         <button class="btn btn-sm btn-outline" id="playerPdfBtn" data-player="${p.id}">📄 Download PDF</button>
       </div>
     </div>
@@ -4216,98 +4217,16 @@ function roundRectPath(ctx, x,y,w,h,r){
 
 async function generatePlayerCardCanvas(playerId){
   const p = S.players[playerId]; if(!p) return null;
-  const team = S.teams[p.teamId] || {};
-  const s = S.settings || {};
-  const W=700,H=880;
-  const canvas = document.createElement('canvas'); canvas.width=W; canvas.height=H;
-  const ctx = canvas.getContext('2d');
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'#0a2e1f'); grad.addColorStop(1,'#155234');
-  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
-  // decorative gold stripe
-  ctx.fillStyle = '#d7a63b'; ctx.fillRect(0,H-90,W,10);
-  // tournament header
-  const logoImg = await loadImageSafe(s.logo);
-  if(logoImg){ ctx.save(); roundRectPath(ctx, 30,30,64,64,12); ctx.clip(); drawCoverImage(ctx, logoImg, 30,30,64,64); ctx.restore(); }
-  ctx.fillStyle = '#f0d488'; ctx.font = '700 26px Arial'; ctx.textBaseline='middle';
-  ctx.fillText((s.shortName||s.name||'EPL').toUpperCase(), logoImg?108:30, 62);
-  ctx.font = '400 16px Arial'; ctx.fillStyle='#cfe6d8';
-  ctx.fillText(s.season||'', logoImg?108:30, 86);
-  // player photo (circular)
-  const photoImg = await loadImageSafe(p.photo);
-  const cx=W/2, cy=280, rad=170;
-  ctx.save();
-  ctx.beginPath(); ctx.arc(cx,cy,rad+8,0,Math.PI*2); ctx.fillStyle='#d7a63b'; ctx.fill();
-  ctx.beginPath(); ctx.arc(cx,cy,rad,0,Math.PI*2); ctx.closePath(); ctx.clip();
-  if(photoImg) drawCoverImage(ctx, photoImg, cx-rad, cy-rad, rad*2, rad*2);
-  else { ctx.fillStyle='#2a5f42'; ctx.fillRect(cx-rad,cy-rad,rad*2,rad*2); }
-  ctx.restore();
-  // name
-  ctx.textAlign='center';
-  ctx.fillStyle='#ffffff'; ctx.font='800 46px Arial';
-  ctx.fillText(p.name||'Player Name', cx, 505);
-  ctx.fillStyle='#d7a63b'; ctx.font='700 22px Arial';
-  ctx.fillText((p.role||'').toUpperCase() + (p.jersey? '   ·   #'+p.jersey : ''), cx, 545);
-  // team chip
-  if(team.name){
-    ctx.fillStyle='rgba(255,255,255,0.12)';
-    roundRectPath(ctx, cx-140, 570, 280, 46, 23); ctx.fill();
-    ctx.fillStyle='#ffffff'; ctx.font='600 20px Arial';
-    ctx.fillText(team.name, cx, 594);
-  }
-  // stats row
-  const stats = computePlayerStats().find(x=>x.playerId===playerId) || {};
-  const items = [['MAT', stats.matches||0], ['RUNS', stats.runs||0], ['WKTS', stats.wickets||0]];
-  const rowY = 700, colW = W/3;
-  items.forEach((it,i)=>{
-    const x = colW*i + colW/2;
-    ctx.fillStyle='#f0d488'; ctx.font='800 34px Arial'; ctx.fillText(String(it[1]), x, rowY);
-    ctx.fillStyle='#cfe6d8'; ctx.font='600 14px Arial'; ctx.fillText(it[0], x, rowY+30);
-  });
-  ctx.textAlign='left';
-  return canvas;
+  return buildPlayerCardGraphic({id:playerId, ...p}, true);
 }
 async function generateTeamBannerCanvas(teamId){
   const t = S.teams[teamId]; if(!t) return null;
-  const s = S.settings || {};
-  const squad = objToArr(S.players).filter(p=>p.teamId===teamId);
-  const cols = 4;
-  const rows = Math.max(1, Math.ceil(squad.length/cols));
-  const W=1000, headerH=200, cardW=220, cardH=260, pad=20;
-  const H = headerH + rows*cardH + (rows+1)*pad + 60;
-  const canvas = document.createElement('canvas'); canvas.width=W; canvas.height=H;
-  const ctx = canvas.getContext('2d');
-  const bgImg = await loadImageSafe(t.banner);
-  if(bgImg) drawCoverImage(ctx, bgImg, 0,0,W,headerH);
-  else { ctx.fillStyle='#0f3d29'; ctx.fillRect(0,0,W,headerH); }
-  ctx.fillStyle='rgba(10,46,31,0.72)'; ctx.fillRect(0,0,W,headerH);
-  const logoImg = await loadImageSafe(t.logo);
-  if(logoImg){ ctx.save(); roundRectPath(ctx,30,30,120,120,16); ctx.clip(); drawCoverImage(ctx, logoImg, 30,30,120,120); ctx.restore(); }
-  ctx.fillStyle='#ffffff'; ctx.font='800 44px Arial'; ctx.textBaseline='alphabetic';
-  ctx.fillText(t.name||'Team', 170, 90);
-  ctx.fillStyle='#d7a63b'; ctx.font='600 20px Arial';
-  ctx.fillText((s.name||'Tournament') + (t.captain? '   ·   Captain: '+t.captain : ''), 170, 125);
-  ctx.fillStyle='#cfe6d8'; ctx.font='500 16px Arial';
-  ctx.fillText(squad.length+' Players', 170, 155);
-  // squad grid
-  let idx=0;
-  for(const p of squad){
-    const col = idx % cols, row = Math.floor(idx/cols);
-    const x = pad + col*(cardW+pad), y = headerH + pad + row*(cardH+pad);
-    ctx.fillStyle = '#ffffff'; roundRectPath(ctx,x,y,cardW,cardH,14); ctx.fill();
-    const photoImg = await loadImageSafe(p.photo);
-    ctx.save(); roundRectPath(ctx, x+20, y+16, cardW-40, cardW-40, 12); ctx.clip();
-    if(photoImg) drawCoverImage(ctx, photoImg, x+20, y+16, cardW-40, cardW-40);
-    else { ctx.fillStyle='#ece5d3'; ctx.fillRect(x+20,y+16,cardW-40,cardW-40); }
-    ctx.restore();
-    ctx.fillStyle='#12201a'; ctx.font='700 17px Arial'; ctx.textAlign='center';
-    ctx.fillText((p.name||'').length>16? p.name.slice(0,15)+'…' : (p.name||''), x+cardW/2, y+cardW-16);
-    ctx.fillStyle='#4b5b52'; ctx.font='500 13px Arial';
-    ctx.fillText((p.role||'')+(p.jersey?' · #'+p.jersey:''), x+cardW/2, y+cardW+6);
-    ctx.textAlign='left';
-    idx++;
-  }
-  return canvas;
+  if(!squadOf(teamId).length) return null;
+  return buildTeamBannerGraphic({id:teamId, ...t}, true);
+}
+async function generateSoldCardCanvas(playerId, aspect){
+  const p = S.players[playerId]; if(!p) return null;
+  return buildSoldCardGraphic({id:playerId, ...p}, true, aspect||'1:1');
 }
 async function canvasToShareOrDownload(canvas, filename){
   return new Promise(resolve=>{
@@ -4369,6 +4288,38 @@ function openTeamBannerModal(teamId){
   });
 }
 
+function openSoldCardModal(playerId){
+  openModal(`
+    <div class="modal-head"><h3>Sold Card</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <select id="soldCardAspect" style="flex:1;padding:8px;border:1.5px solid var(--line);border-radius:8px;"><option value="1:1">Square (1:1)</option><option value="4:5">Portrait (4:5)</option></select>
+    </div>
+    <div id="soldCardHost" style="text-align:center;"><div class="loading-block"><span class="spinner"></span> Generating card…</div></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn btn-primary btn-block" id="soldCardDownloadBtn" disabled>⬇️ Download</button>
+      <button class="btn btn-gold btn-block" id="soldCardShareBtn" disabled>📤 Share</button>
+    </div>
+  `);
+  function render(){
+    const aspect = document.getElementById('soldCardAspect').value;
+    const host = document.getElementById('soldCardHost');
+    host.innerHTML = '<div class="loading-block"><span class="spinner"></span> Generating card…</div>';
+    generateSoldCardCanvas(playerId, aspect).then(canvas=>{
+      if(!host.isConnected) return;
+      host.innerHTML='';
+      if(!canvas){ host.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;">This player is not marked as sold yet.</p>'; return; }
+      canvas.style.width='100%'; canvas.style.maxWidth='320px'; canvas.style.borderRadius='12px'; canvas.style.boxShadow='var(--shadow)';
+      host.appendChild(canvas);
+      const p = S.players[playerId];
+      const fname = 'sold-card-'+(p.name||'player').replace(/\s+/g,'_')+'.png';
+      const dlBtn = document.getElementById('soldCardDownloadBtn'), shBtn = document.getElementById('soldCardShareBtn');
+      if(dlBtn){ dlBtn.disabled=false; dlBtn.onclick = ()=>{ const url=canvas.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=fname; a.click(); }; }
+      if(shBtn){ shBtn.disabled=false; shBtn.onclick = ()=> canvasToShareOrDownload(canvas, fname); }
+    });
+  }
+  document.getElementById('soldCardAspect').onchange = render;
+  render();
+}
 /* ---- PDF generation (jsPDF) ---- */
 function pdfSharePrompt(doc, filename){
   const blob = doc.output('blob');
@@ -4688,6 +4639,13 @@ const GFX = {
   bg1:'#0c2233', bg2:'#123344', panel:'rgba(255,255,255,.05)', panelBorder:'rgba(255,255,255,.10)',
   teal:'#22b8a1', mint:'#7fe3c8', gold:'#d8ae55', textLight:'#eef6f3', textMuted:'#93b0ac', textFaint:'rgba(238,246,243,.55)'
 };
+function gfxRoleColor(role){
+  const r = (role||'').toLowerCase();
+  if(r.includes('wicket')) return '#d8ae55';
+  if(r.includes('all')) return '#a78bfa';
+  if(r.includes('bowl')) return '#22b8a1';
+  return '#4f9dff'; // batsman / default
+}
 function gfxRoundRect(ctx,x,y,w,h,r){
   ctx.beginPath();
   if(ctx.roundRect){ ctx.roundRect(x,y,w,h,r); } else { ctx.rect(x,y,w,h); }
@@ -4725,17 +4683,22 @@ async function buildPlayerCardGraphic(p, usePhotos){
   gfxBackground(ctx,W,H);
   const logoImg = usePhotos ? await loadImageSafe(s.logo) : null;
   gfxHeaderBrand(ctx, 34, 30, logoImg, s.name, s.season);
-  // role badge top-right
+  // role badge top-right — color-coded by role
   if(p.role){
+    const rc = gfxRoleColor(p.role);
     ctx.font='bold 12px sans-serif'; const rw = ctx.measureText(p.role.toUpperCase()).width+28;
-    ctx.fillStyle=GFX.panel; gfxRoundRect(ctx,W-34-rw,34,rw,30,15); ctx.fill();
-    ctx.strokeStyle=GFX.panelBorder; gfxRoundRect(ctx,W-34-rw,34,rw,30,15); ctx.stroke();
-    ctx.fillStyle=GFX.mint; ctx.textAlign='center'; ctx.fillText(p.role.toUpperCase(), W-34-rw/2, 53); ctx.textAlign='left';
+    ctx.fillStyle=rc+'26'; gfxRoundRect(ctx,W-34-rw,34,rw,30,15); ctx.fill();
+    ctx.strokeStyle=rc; gfxRoundRect(ctx,W-34-rw,34,rw,30,15); ctx.stroke();
+    ctx.fillStyle=rc; ctx.textAlign='center'; ctx.fillText(p.role.toUpperCase(), W-34-rw/2, 53); ctx.textAlign='left';
   }
   // photo
   const photoImg = usePhotos ? await loadImageSafe(p.photo) : null;
   const px=34, py=96, pw=W-68, ph=460;
-  ctx.save(); gfxRoundRect(ctx,px,py,pw,ph,20); ctx.clip();
+  ctx.save();
+  ctx.shadowColor='rgba(34,184,161,.35)'; ctx.shadowBlur=28;
+  gfxRoundRect(ctx,px,py,pw,ph,20); ctx.fillStyle='rgba(0,0,0,0)'; ctx.fill();
+  ctx.shadowBlur=0;
+  gfxRoundRect(ctx,px,py,pw,ph,20); ctx.clip();
   if(photoImg){ const sc=Math.max(pw/photoImg.width, ph/photoImg.height); const iw=photoImg.width*sc, ih=photoImg.height*sc; ctx.drawImage(photoImg, px+pw/2-iw/2, py+ph/2-ih/2, iw, ih); }
   else { ctx.fillStyle=cardAvatarColor(p.name); ctx.fillRect(px,py,pw,ph); ctx.fillStyle='#fff'; ctx.font='bold 140px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText((p.name||'?').charAt(0).toUpperCase(), px+pw/2, py+ph/2); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
   const shade = ctx.createLinearGradient(0,py+ph-140,0,py+ph); shade.addColorStop(0,'rgba(12,34,51,0)'); shade.addColorStop(1,'rgba(12,34,51,.85)');
@@ -5063,6 +5026,8 @@ function wireTeamDetailButtons(){
 function wirePlayerDetailButtons(){
   const cBtn = document.getElementById('playerCardBtn');
   if(cBtn) cBtn.onclick = ()=> openPlayerCardModal(cBtn.dataset.player);
+  const soldBtn = document.getElementById('soldCardBtn');
+  if(soldBtn) soldBtn.onclick = ()=> openSoldCardModal(soldBtn.dataset.player);
   const pBtn = document.getElementById('playerPdfBtn');
   if(pBtn) pBtn.onclick = ()=>{ try{ generatePlayerPDF(pBtn.dataset.player, false); }catch(err){ console.error(err); toast('Could not generate PDF: '+(err.message||err),'error'); } };
 }
