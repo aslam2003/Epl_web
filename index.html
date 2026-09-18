@@ -2109,6 +2109,7 @@ const ADMIN_NAV = [
   {r:'fixtures',ic:'📅',label:'Fixtures'},
   {r:'points',ic:'🏆',label:'Points Table'},
   {r:'stats',ic:'📈',label:'Player Statistics'},
+  {r:'graphics',ic:'🎨',label:'Graphics Studio'},
   {r:'notices',ic:'📢',label:'Notices'},
   {r:'sponsors',ic:'🤝',label:'Sponsors'},
   {r:'gallery',ic:'🖼️',label:'Gallery'},
@@ -2199,6 +2200,7 @@ function renderAdminArea(app){
     case 'fixtures': renderAdminFixtures(main); break;
     case 'points': main.innerHTML = `<div class="section-title" style="margin-top:0;"><h2>Points Table (auto-calculated)</h2></div>` + renderPointsTableHtml(computePointsTable(),false); break;
     case 'stats': main.innerHTML = `<div class="section-title" style="margin-top:0;"><h2>Player Statistics (auto-calculated)</h2></div>` + viewStats(); wireStatsButtons(); break;
+    case 'graphics': renderAdminGraphics(main); break;
     case 'notices': renderAdminNotices(main); break;
     case 'sponsors': renderAdminSponsors(main); break;
     case 'gallery': renderAdminGallery(main); break;
@@ -2408,7 +2410,7 @@ function renderAdminSettings(main){
       banner: window._pendingUploads['upBanner']||'',
       updatedAt: Date.now()
     };
-    db.ref('settings').update(payload)
+    db.ref(seasonPath('settings')).update(payload)
       .then(()=>{ toast('Settings saved','success'); })
       .catch(err=>toast(err.message,'error'))
       .finally(()=>{ btn.disabled=false; btn.textContent='Save Settings'; });
@@ -2725,6 +2727,11 @@ function openPlayerModal(p={}, id=null){
         <div class="field"><label>Batting Style</label><input type="text" id="pBat" value="${escapeHtml(p.battingStyle||'')}" placeholder="Right-hand bat"></div>
         <div class="field"><label>Bowling Style</label><input type="text" id="pBowl" value="${escapeHtml(p.bowlingStyle||'')}" placeholder="Right-arm medium"></div>
       </div>
+      <div class="field-row">
+        <div class="field"><label>Age (optional)</label><input type="number" id="pAge" value="${p.age||''}" min="0"></div>
+        <div class="field"><label>Height (optional)</label><input type="text" id="pHeight" value="${escapeHtml(p.height||'')}" placeholder="5'8&quot;"></div>
+        <div class="field"><label>Weight (optional)</label><input type="text" id="pWeight" value="${escapeHtml(p.weight||'')}" placeholder="68 kg"></div>
+      </div>
       <div class="field"><label>Team</label><select id="pTeam"><option value="">Unassigned / In Auction Pool</option>${teams.map(t=>`<option value="${t.id}" ${p.teamId===t.id?'selected':''}>${escapeHtml(t.name)}</option>`).join('')}</select></div>
       <div class="field-row">
         <div class="field"><label>Base Price</label><input type="number" id="pBase" value="${p.basePrice||1000}" min="0"></div>
@@ -2754,6 +2761,9 @@ function openPlayerModal(p={}, id=null){
       category: document.getElementById('pCategory').value,
       battingStyle: document.getElementById('pBat').value.trim(),
       bowlingStyle: document.getElementById('pBowl').value.trim(),
+      age: document.getElementById('pAge').value ? Number(document.getElementById('pAge').value) : null,
+      height: document.getElementById('pHeight').value.trim(),
+      weight: document.getElementById('pWeight').value.trim(),
       teamId: document.getElementById('pTeam').value || null,
       basePrice: Number(document.getElementById('pBase').value)||0,
       auctionPrice: Number(document.getElementById('pPrice').value)||0,
@@ -2867,26 +2877,26 @@ function wireAuctionAdmin(a, pool){
   if(startBtn) startBtn.onclick = ()=>{
     if(!pool.length){ toast('Auction pool is empty','error'); return; }
     const first = pool[0];
-    db.ref('auction').update({ status:'live', currentPlayerId:first.id, currentBid:first.basePrice, currentTeamId:null, bidIncrement: a.bidIncrement||100 })
+    db.ref(seasonPath('auction')).update({ status:'live', currentPlayerId:first.id, currentBid:first.basePrice, currentTeamId:null, bidIncrement: a.bidIncrement||100 })
       .then(()=>toast('Auction started','success'));
   };
   const pauseBtn = document.getElementById('pauseAuctionBtn');
-  if(pauseBtn) pauseBtn.onclick = ()=> db.ref('auction/status').set('paused').then(()=>toast('Auction paused','info'));
+  if(pauseBtn) pauseBtn.onclick = ()=> db.ref(seasonPath('auction')+'/status').set('paused').then(()=>toast('Auction paused','info'));
   const resumeBtn = document.getElementById('resumeAuctionBtn');
-  if(resumeBtn) resumeBtn.onclick = ()=> db.ref('auction/status').set('live').then(()=>toast('Auction resumed','success'));
+  if(resumeBtn) resumeBtn.onclick = ()=> db.ref(seasonPath('auction')+'/status').set('live').then(()=>toast('Auction resumed','success'));
   const nextBtn = document.getElementById('nextPlayerBtn');
   if(nextBtn) nextBtn.onclick = ()=>{
     const currentIdx = pool.findIndex(p=>p.id===a.currentPlayerId);
     const next = pool[currentIdx+1] || pool[0];
     if(!next){ toast('No more players in pool','error'); return; }
-    db.ref('auction').update({ currentPlayerId:next.id, currentBid:next.basePrice, currentTeamId:null, status:'live' });
+    db.ref(seasonPath('auction')).update({ currentPlayerId:next.id, currentBid:next.basePrice, currentTeamId:null, status:'live' });
   };
   const prevBtn = document.getElementById('prevPlayerBtn');
   if(prevBtn) prevBtn.onclick = ()=>{
     const currentIdx = pool.findIndex(p=>p.id===a.currentPlayerId);
     const prev = pool[currentIdx-1];
     if(!prev){ toast('No previous player','error'); return; }
-    db.ref('auction').update({ currentPlayerId:prev.id, currentBid:prev.basePrice, currentTeamId:null, status:'live' });
+    db.ref(seasonPath('auction')).update({ currentPlayerId:prev.id, currentBid:prev.basePrice, currentTeamId:null, status:'live' });
   };
   const placeBidBtn = document.getElementById('placeBidBtn');
   if(placeBidBtn) placeBidBtn.onclick = ()=>{
@@ -2895,7 +2905,7 @@ function wireAuctionAdmin(a, pool){
     if(!teamId){ toast('Select a team first','error'); return; }
     const current = S.players[a.currentPlayerId];
     const newBid = (a.currentBid || current.basePrice) + inc;
-    db.ref('auction').update({ currentBid:newBid, currentTeamId:teamId, bidIncrement:inc });
+    db.ref(seasonPath('auction')).update({ currentBid:newBid, currentTeamId:teamId, bidIncrement:inc });
   };
   const soldBtn = document.getElementById('soldBtn');
   if(soldBtn) soldBtn.onclick = ()=>{
@@ -2927,15 +2937,15 @@ function wireAuctionAdmin(a, pool){
   const resetBtn = document.getElementById('resetAuctionBtn');
   if(resetBtn) resetBtn.onclick = ()=>{
     const current = S.players[a.currentPlayerId];
-    if(current) db.ref('auction').update({ currentBid:current.basePrice, currentTeamId:null });
+    if(current) db.ref(seasonPath('auction')).update({ currentBid:current.basePrice, currentTeamId:null });
   };
   function advanceAuction(justProcessedId){
     const remaining = auctionPool(ADMIN_AUCTION_CATEGORY).filter(p=>p.id!==justProcessedId);
     if(remaining.length){
       const next = remaining[0];
-      db.ref('auction').update({ currentPlayerId:next.id, currentBid:next.basePrice, currentTeamId:null });
+      db.ref(seasonPath('auction')).update({ currentPlayerId:next.id, currentBid:next.basePrice, currentTeamId:null });
     } else {
-      db.ref('auction').update({ currentPlayerId:null, status:'paused' });
+      db.ref(seasonPath('auction')).update({ currentPlayerId:null, status:'paused' });
       toast('Auction pool complete','info');
     }
   }
@@ -4666,6 +4676,332 @@ async function downloadCanvasCard(buildFn, filename){
   }catch(err){
     console.error(err); toast('Could not generate card: '+(err.message||err),'error');
   }
+}
+
+/* ============================================================
+   GRAPHICS STUDIO — cool navy/teal/mint social-media card
+   generator (Player Card, Team Banner, Sold Card). Separate
+   palette from the app's own green/gold UI theme, on purpose —
+   this is an export-design system, not the app chrome.
+   ============================================================ */
+const GFX = {
+  bg1:'#0c2233', bg2:'#123344', panel:'rgba(255,255,255,.05)', panelBorder:'rgba(255,255,255,.10)',
+  teal:'#22b8a1', mint:'#7fe3c8', gold:'#d8ae55', textLight:'#eef6f3', textMuted:'#93b0ac', textFaint:'rgba(238,246,243,.55)'
+};
+function gfxRoundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  if(ctx.roundRect){ ctx.roundRect(x,y,w,h,r); } else { ctx.rect(x,y,w,h); }
+}
+function gfxBackground(ctx, W, H){
+  const grad = ctx.createLinearGradient(0,0,W,H);
+  grad.addColorStop(0, GFX.bg1); grad.addColorStop(1, GFX.bg2);
+  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+}
+function gfxHeaderBrand(ctx, x, y, logoImg, tournamentName, season){
+  if(logoImg){ ctx.save(); gfxRoundRect(ctx,x,y,40,40,8); ctx.clip(); ctx.drawImage(logoImg,x,y,40,40); ctx.restore(); }
+  else { ctx.fillStyle=GFX.panel; gfxRoundRect(ctx,x,y,40,40,8); ctx.fill(); ctx.fillStyle=GFX.gold; ctx.font='bold 16px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🏆',x+20,y+21); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
+  ctx.fillStyle = GFX.textLight; ctx.font='bold 13px sans-serif';
+  ctx.fillText((tournamentName||'TOURNAMENT').toUpperCase(), x+50, y+17);
+  ctx.fillStyle = GFX.mint; ctx.font='11px sans-serif';
+  ctx.fillText((season||'').toUpperCase(), x+50, y+32);
+}
+function gfxStatBox(ctx, x, y, w, h, label, value){
+  ctx.fillStyle = GFX.panel; gfxRoundRect(ctx,x,y,w,h,10); ctx.fill();
+  ctx.strokeStyle = GFX.panelBorder; ctx.lineWidth=1; gfxRoundRect(ctx,x,y,w,h,10); ctx.stroke();
+  ctx.textAlign='center';
+  ctx.fillStyle = GFX.textMuted; ctx.font='10.5px sans-serif';
+  ctx.fillText(label.toUpperCase(), x+w/2, y+h/2-6);
+  ctx.fillStyle = GFX.textLight; ctx.font='bold 20px sans-serif';
+  ctx.fillText(String(value), x+w/2, y+h/2+18);
+  ctx.textAlign='left';
+}
+async function buildPlayerCardGraphic(p, usePhotos){
+  const team = p.teamId ? S.teams[p.teamId] : null;
+  const stats = computePlayerStats().find(s=>s.playerId===p.id) || null;
+  const s = S.settings||{};
+  const W=760,H=1060;
+  const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  gfxBackground(ctx,W,H);
+  const logoImg = usePhotos ? await loadImageSafe(s.logo) : null;
+  gfxHeaderBrand(ctx, 34, 30, logoImg, s.name, s.season);
+  // role badge top-right
+  if(p.role){
+    ctx.font='bold 12px sans-serif'; const rw = ctx.measureText(p.role.toUpperCase()).width+28;
+    ctx.fillStyle=GFX.panel; gfxRoundRect(ctx,W-34-rw,34,rw,30,15); ctx.fill();
+    ctx.strokeStyle=GFX.panelBorder; gfxRoundRect(ctx,W-34-rw,34,rw,30,15); ctx.stroke();
+    ctx.fillStyle=GFX.mint; ctx.textAlign='center'; ctx.fillText(p.role.toUpperCase(), W-34-rw/2, 53); ctx.textAlign='left';
+  }
+  // photo
+  const photoImg = usePhotos ? await loadImageSafe(p.photo) : null;
+  const px=34, py=96, pw=W-68, ph=460;
+  ctx.save(); gfxRoundRect(ctx,px,py,pw,ph,20); ctx.clip();
+  if(photoImg){ const sc=Math.max(pw/photoImg.width, ph/photoImg.height); const iw=photoImg.width*sc, ih=photoImg.height*sc; ctx.drawImage(photoImg, px+pw/2-iw/2, py+ph/2-ih/2, iw, ih); }
+  else { ctx.fillStyle=cardAvatarColor(p.name); ctx.fillRect(px,py,pw,ph); ctx.fillStyle='#fff'; ctx.font='bold 140px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText((p.name||'?').charAt(0).toUpperCase(), px+pw/2, py+ph/2); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
+  const shade = ctx.createLinearGradient(0,py+ph-140,0,py+ph); shade.addColorStop(0,'rgba(12,34,51,0)'); shade.addColorStop(1,'rgba(12,34,51,.85)');
+  ctx.fillStyle=shade; ctx.fillRect(px,py+ph-140,pw,140);
+  ctx.restore();
+  ctx.strokeStyle=GFX.panelBorder; ctx.lineWidth=1.5; gfxRoundRect(ctx,px,py,pw,ph,20); ctx.stroke();
+  // name + jersey (overlaid bottom of photo)
+  ctx.fillStyle='#fff'; ctx.font='bold 34px sans-serif';
+  ctx.fillText(p.name||'—', px+22, py+ph-58);
+  ctx.fillStyle=GFX.mint; ctx.font='16px sans-serif';
+  ctx.fillText(p.jersey? '#'+p.jersey : '', px+22, py+ph-30);
+  if(team){
+    const teamLogoImg = usePhotos ? await loadImageSafe(team.logo) : null;
+    const tx = px+pw-140;
+    if(teamLogoImg){ ctx.save(); gfxRoundRect(ctx,tx,py+ph-56,26,26,6); ctx.clip(); ctx.drawImage(teamLogoImg,tx,py+ph-56,26,26); ctx.restore(); }
+    ctx.fillStyle='#fff'; ctx.font='13px sans-serif'; ctx.textAlign='left';
+    ctx.fillText(team.shortName||team.name||'', tx+32, py+ph-38);
+  }
+  let y = py+ph+36;
+  // age/height/weight row — only if present
+  const bioFields = [ p.age?['AGE',p.age]:null, p.height?['HEIGHT',p.height]:null, p.weight?['WEIGHT',p.weight]:null ].filter(Boolean);
+  if(bioFields.length){
+    const bw = (W-68-(bioFields.length-1)*12)/bioFields.length;
+    bioFields.forEach((f,i)=> gfxStatBox(ctx, 34+i*(bw+12), y, bw, 74, f[0], f[1]));
+    y += 74+26;
+  }
+  // stats grid — only fields with real data
+  if(stats){
+    const cells = [];
+    if(stats.runs>0 || stats.innings>0) cells.push(['RUNS', stats.runs]);
+    if(stats.wickets>0) cells.push(['WICKETS', stats.wickets]);
+    if(stats.balls>=6) cells.push(['AVG', stats.average.toFixed(1)]);
+    if(stats.matches>0) cells.push(['MATCHES', stats.matches]);
+    if(cells.length){
+      const cw = (W-68-(cells.length-1)*12)/cells.length;
+      cells.forEach((c,i)=> gfxStatBox(ctx, 34+i*(cw+12), y, cw, 88, c[0], c[1]));
+      y += 88+26;
+    }
+  }
+  // playing style line
+  const styleParts = [p.battingStyle, p.bowlingStyle].filter(Boolean);
+  if(styleParts.length){
+    ctx.fillStyle=GFX.panel; gfxRoundRect(ctx,34,y,W-68,60,12); ctx.fill();
+    ctx.strokeStyle=GFX.panelBorder; gfxRoundRect(ctx,34,y,W-68,60,12); ctx.stroke();
+    ctx.fillStyle=GFX.textMuted; ctx.font='10.5px sans-serif'; ctx.fillText('PLAYING STYLE', 52, y+24);
+    ctx.fillStyle=GFX.textLight; ctx.font='bold 15px sans-serif'; ctx.fillText(styleParts.join('   •   '), 52, y+45);
+  }
+  ctx.fillStyle=GFX.textFaint; ctx.font='11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText((s.name||'Tournament')+' — Player Card', W/2, H-20);
+  ctx.textAlign='left';
+  return canvas;
+}
+async function buildTeamBannerGraphic(t, usePhotos){
+  const s = S.settings||{};
+  const squad = squadOf(t.id);
+  const table = computePointsTable()[t.id] || {played:0,won:0,lost:0};
+  const W=1600,H=640;
+  const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  gfxBackground(ctx,W,H);
+  const logoImg = usePhotos ? await loadImageSafe(s.logo) : null;
+  gfxHeaderBrand(ctx, 40, 32, logoImg, s.name, s.season);
+  // team logo + name
+  const teamLogoImg = usePhotos ? await loadImageSafe(t.logo) : null;
+  const tlx=40, tly=96, tls=110;
+  ctx.save(); gfxRoundRect(ctx,tlx,tly,tls,tls,18); ctx.clip();
+  if(teamLogoImg){ const sc=Math.max(tls/teamLogoImg.width,tls/teamLogoImg.height); const iw=teamLogoImg.width*sc, ih=teamLogoImg.height*sc; ctx.drawImage(teamLogoImg, tlx+tls/2-iw/2, tly+tls/2-ih/2, iw, ih); }
+  else { ctx.fillStyle=cardAvatarColor(t.name); ctx.fillRect(tlx,tly,tls,tls); ctx.fillStyle='#fff'; ctx.font='bold 46px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText((t.shortName||t.name||'?').charAt(0).toUpperCase(), tlx+tls/2, tly+tls/2); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
+  ctx.restore();
+  ctx.strokeStyle=GFX.panelBorder; gfxRoundRect(ctx,tlx,tly,tls,tls,18); ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.font='bold 42px sans-serif';
+  ctx.fillText(t.name||'—', tlx+tls+26, tly+50);
+  ctx.fillStyle=GFX.mint; ctx.font='14px sans-serif';
+  ctx.fillText((s.name||'TOURNAMENT').toUpperCase(), tlx+tls+26, tly+76);
+  if(t.description){
+    ctx.fillStyle=GFX.textMuted; ctx.font='italic 15px sans-serif';
+    ctx.fillText(t.description.length>70? t.description.slice(0,70)+'…' : t.description, tlx+tls+26, tly+102);
+  }
+  // stats row
+  const statCells = [['TOTAL PLAYERS', squad.length], ['MATCHES', table.played], ['WINS', table.won], ['LOSSES', table.lost]];
+  if(t.owner) statCells.push(['OWNER', t.owner]);
+  let sx = 40, sy = 236, sw = Math.min(220, (W-80-(statCells.length-1)*14)/statCells.length);
+  statCells.forEach(c=>{ gfxStatBox(ctx, sx, sy, sw, 78, c[0], c[1]); sx += sw+14; });
+  // squad thumbnails
+  const squadY = 350, thumbSize = 100, gap=16, maxCols = Math.min(squad.length, 12);
+  const totalW = maxCols*thumbSize + (maxCols-1)*gap;
+  let tx0 = Math.max(40, W/2 - totalW/2);
+  for(let i=0;i<Math.min(squad.length,12);i++){
+    const pl = squad[i];
+    const tx = tx0 + i*(thumbSize+gap);
+    const img = usePhotos ? await loadImageSafe(pl.photo) : null;
+    ctx.save(); gfxRoundRect(ctx,tx,squadY,thumbSize,thumbSize,14); ctx.clip();
+    if(img){ const sc=Math.max(thumbSize/img.width, thumbSize/img.height); const iw=img.width*sc, ih=img.height*sc; ctx.drawImage(img, tx+thumbSize/2-iw/2, squadY+thumbSize/2-ih/2, iw, ih); }
+    else { ctx.fillStyle=cardAvatarColor(pl.name); ctx.fillRect(tx,squadY,thumbSize,thumbSize); ctx.fillStyle='#fff'; ctx.font='bold 34px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText((pl.name||'?').charAt(0).toUpperCase(), tx+thumbSize/2, squadY+thumbSize/2); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
+    ctx.restore();
+    ctx.strokeStyle=GFX.panelBorder; gfxRoundRect(ctx,tx,squadY,thumbSize,thumbSize,14); ctx.stroke();
+    ctx.fillStyle=GFX.textLight; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+    const nm = (pl.name||'').split(' ')[0];
+    ctx.fillText(nm.length>12? nm.slice(0,11)+'…':nm, tx+thumbSize/2, squadY+thumbSize+18);
+    ctx.textAlign='left';
+  }
+  if(squad.length>12){
+    ctx.fillStyle=GFX.textMuted; ctx.font='bold 14px sans-serif';
+    ctx.fillText('+'+(squad.length-12)+' more', tx0+12*(thumbSize+gap), squadY+thumbSize/2);
+  }
+  ctx.fillStyle=GFX.textFaint; ctx.font='11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText((s.name||'Tournament')+' — Team Banner', W/2, H-20);
+  ctx.textAlign='left';
+  return canvas;
+}
+async function buildSoldCardGraphic(p, usePhotos, aspect){
+  const s = S.settings||{};
+  const team = p.teamId ? S.teams[p.teamId] : null;
+  const W=800, H = aspect==='4:5' ? 1000 : 800;
+  const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  gfxBackground(ctx,W,H);
+  const logoImg = usePhotos ? await loadImageSafe(s.logo) : null;
+  gfxHeaderBrand(ctx, 32, 28, logoImg, s.name, s.season);
+  if(p.jersey){
+    ctx.font='bold 14px sans-serif'; const rw=ctx.measureText('#'+p.jersey).width+24;
+    ctx.fillStyle=GFX.panel; gfxRoundRect(ctx,W-32-rw,32,rw,30,15); ctx.fill();
+    ctx.fillStyle=GFX.gold; ctx.textAlign='center'; ctx.fillText('#'+p.jersey, W-32-rw/2, 52); ctx.textAlign='left';
+  }
+  const photoImg = usePhotos ? await loadImageSafe(p.photo) : null;
+  const px=32, py=92, pw=W-64, ph = H - 340;
+  ctx.save(); gfxRoundRect(ctx,px,py,pw,ph,20); ctx.clip();
+  if(photoImg){ const sc=Math.max(pw/photoImg.width, ph/photoImg.height); const iw=photoImg.width*sc, ih=photoImg.height*sc; ctx.drawImage(photoImg, px+pw/2-iw/2, py+ph/2-ih/2, iw, ih); }
+  else { ctx.fillStyle=cardAvatarColor(p.name); ctx.fillRect(px,py,pw,ph); ctx.fillStyle='#fff'; ctx.font='bold 120px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText((p.name||'?').charAt(0).toUpperCase(), px+pw/2, py+ph/2); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
+  const shade = ctx.createLinearGradient(0,py,0,py+ph); shade.addColorStop(0,'rgba(12,34,51,0)'); shade.addColorStop(0.6,'rgba(12,34,51,0)'); shade.addColorStop(1,'rgba(12,34,51,.9)');
+  ctx.fillStyle=shade; ctx.fillRect(px,py,pw,ph);
+  ctx.restore();
+  ctx.strokeStyle=GFX.panelBorder; gfxRoundRect(ctx,px,py,pw,ph,20); ctx.stroke();
+  // SOLD badge
+  ctx.fillStyle=GFX.gold; ctx.font='900 54px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('SOLD', W/2, py+ph-70);
+  ctx.fillStyle='#fff'; ctx.font='bold 26px sans-serif';
+  ctx.fillText(p.name||'—', W/2, py+ph-30);
+  ctx.textAlign='left';
+  ctx.fillStyle=GFX.mint; ctx.font='13px sans-serif'; ctx.textAlign='center';
+  ctx.fillText((p.role||'').toUpperCase(), W/2, py+ph+22);
+  ctx.textAlign='left';
+  // price boxes
+  const boxY = py+ph+46, boxH=76, boxW=(W-64-16)/2;
+  gfxStatBox(ctx, 32, boxY, boxW, boxH, 'Base Price', money(p.basePrice||0));
+  gfxStatBox(ctx, 32+boxW+16, boxY, boxW, boxH, 'Sold For', money(p.auctionPrice||0));
+  // bought by
+  if(team){
+    const by = boxY+boxH+20;
+    ctx.fillStyle=GFX.panel; gfxRoundRect(ctx,32,by,W-64,64,12); ctx.fill();
+    ctx.strokeStyle=GFX.panelBorder; gfxRoundRect(ctx,32,by,W-64,64,12); ctx.stroke();
+    const teamLogoImg = usePhotos ? await loadImageSafe(team.logo) : null;
+    if(teamLogoImg){ ctx.save(); gfxRoundRect(ctx,48,by+12,40,40,8); ctx.clip(); ctx.drawImage(teamLogoImg,48,by+12,40,40); ctx.restore(); }
+    ctx.fillStyle=GFX.textMuted; ctx.font='10.5px sans-serif'; ctx.fillText('BOUGHT BY', 100, by+26);
+    ctx.fillStyle='#fff'; ctx.font='bold 18px sans-serif'; ctx.fillText(team.name||'', 100, by+48);
+  }
+  ctx.fillStyle=GFX.textFaint; ctx.font='11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText((s.name||'Tournament'), W/2, H-16);
+  ctx.textAlign='left';
+  return canvas;
+}
+/* ============================================================
+   GRAPHICS STUDIO — admin UI: pick Player Card / Team Banner /
+   Sold Card, choose the subject, live-preview, download PNG,
+   share. Read-only feature — doesn't touch scoring/data logic.
+   ============================================================ */
+let GFX_TAB = 'player';
+function renderAdminGraphics(main){
+  const players = objToArr(S.players);
+  const teams = objToArr(S.teams);
+  const soldPlayers = players.filter(p=>p.auctionStatus==='sold');
+  main.innerHTML = `
+    <div class="section-title" style="margin-top:0;"><h2>🎨 Graphics Studio</h2></div>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">Generate ready-to-share cricket graphics from your tournament's live data — pick a player or team, preview, then download as PNG.</p>
+    <div class="mf-subtabs" style="max-width:420px;">
+      <div class="mf-subtab ${GFX_TAB==='player'?'active':''}" data-gt="player">👤 Player Card</div>
+      <div class="mf-subtab ${GFX_TAB==='team'?'active':''}" data-gt="team">🛡️ Team Banner</div>
+      <div class="mf-subtab ${GFX_TAB==='sold'?'active':''}" data-gt="sold">🏷️ Sold Card</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+      ${GFX_TAB==='player'? `<select id="gfxPlayerSel" style="flex:1;min-width:200px;padding:9px;border:1.5px solid var(--line);border-radius:8px;">${players.length?players.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''):'<option value="">No players yet</option>'}</select>`:''}
+      ${GFX_TAB==='team'? `<select id="gfxTeamSel" style="flex:1;min-width:200px;padding:9px;border:1.5px solid var(--line);border-radius:8px;">${teams.length?teams.map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join(''):'<option value="">No teams yet</option>'}</select>`:''}
+      ${GFX_TAB==='sold'? `<select id="gfxSoldSel" style="flex:1;min-width:200px;padding:9px;border:1.5px solid var(--line);border-radius:8px;">${soldPlayers.length?soldPlayers.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''):'<option value="">No sold players yet</option>'}</select>
+        <select id="gfxSoldAspect" style="padding:9px;border:1.5px solid var(--line);border-radius:8px;"><option value="1:1">Square (1:1)</option><option value="4:5">Portrait (4:5)</option></select>`:''}
+    </div>
+    <div id="gfxPreviewWrap" style="background:#0c2233;border-radius:var(--radius-l);padding:16px;display:flex;justify-content:center;overflow-x:auto;">
+      <canvas id="gfxCanvas" style="max-width:100%;height:auto;border-radius:12px;"></canvas>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" id="gfxDownloadBtn">⬇ Download PNG</button>
+      <button class="btn btn-outline btn-sm" id="gfxShareBtn">↗ Share</button>
+      <button class="btn btn-ghost btn-sm" id="gfxRegenBtn">✨ Regenerate</button>
+    </div>
+  `;
+  wireAdminGraphics();
+}
+async function gfxCurrentBuilder(){
+  if(GFX_TAB==='player'){
+    const sel = document.getElementById('gfxPlayerSel');
+    const p = sel && S.players[sel.value];
+    if(!p) return null;
+    return {build:(withPhotos)=>buildPlayerCardGraphic(p,withPhotos), filename:'player-card-'+(p.name||'player').replace(/\s+/g,'_')+'.png'};
+  }
+  if(GFX_TAB==='team'){
+    const sel = document.getElementById('gfxTeamSel');
+    const t = sel && S.teams[sel.value];
+    if(!t) return null;
+    return {build:(withPhotos)=>buildTeamBannerGraphic({id:sel.value,...t},withPhotos), filename:'team-banner-'+(t.name||'team').replace(/\s+/g,'_')+'.png'};
+  }
+  if(GFX_TAB==='sold'){
+    const sel = document.getElementById('gfxSoldSel');
+    const aspectSel = document.getElementById('gfxSoldAspect');
+    const p = sel && S.players[sel.value];
+    if(!p) return null;
+    return {build:(withPhotos)=>buildSoldCardGraphic(p,withPhotos, aspectSel?aspectSel.value:'1:1'), filename:'sold-card-'+(p.name||'player').replace(/\s+/g,'_')+'.png'};
+  }
+  return null;
+}
+async function gfxRenderPreview(){
+  const canvas = document.getElementById('gfxCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const entry = await gfxCurrentBuilder();
+  if(!entry){ canvas.width=600; canvas.height=200; ctx.fillStyle='#0c2233'; ctx.fillRect(0,0,600,200); ctx.fillStyle='#93b0ac'; ctx.font='14px sans-serif'; ctx.textAlign='center'; ctx.fillText('Nothing selected yet', 300, 104); return; }
+  try{
+    const built = await entry.build(true);
+    canvas.width = built.width; canvas.height = built.height;
+    ctx.drawImage(built,0,0);
+  }catch(err){ console.error(err); toast('Could not render preview: '+(err.message||err),'error'); }
+}
+function wireAdminGraphics(){
+  document.querySelectorAll('[data-gt]').forEach(el=>{
+    el.onclick = ()=>{ GFX_TAB = el.dataset.gt; renderAdminGraphics(document.getElementById('adminMain')); };
+  });
+  ['gfxPlayerSel','gfxTeamSel','gfxSoldSel','gfxSoldAspect'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.onchange = gfxRenderPreview;
+  });
+  const regenBtn = document.getElementById('gfxRegenBtn');
+  if(regenBtn) regenBtn.onclick = gfxRenderPreview;
+  const dlBtn = document.getElementById('gfxDownloadBtn');
+  if(dlBtn) dlBtn.onclick = async ()=>{
+    const entry = await gfxCurrentBuilder();
+    if(!entry){ toast('Select something first','error'); return; }
+    downloadCanvasCard(entry.build, entry.filename);
+  };
+  const shareBtn = document.getElementById('gfxShareBtn');
+  if(shareBtn) shareBtn.onclick = async ()=>{
+    const entry = await gfxCurrentBuilder();
+    if(!entry){ toast('Select something first','error'); return; }
+    try{
+      let canvas = await entry.build(true);
+      canvas.toBlob(async (blob)=>{
+        if(!blob){ toast('Could not generate image','error'); return; }
+        const file = new File([blob], entry.filename, {type:'image/png'});
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          navigator.share({files:[file], title:entry.filename}).catch(()=>{});
+        } else {
+          downloadCanvasCard(entry.build, entry.filename);
+          toast('Sharing not supported here — downloaded instead','info');
+        }
+      }, 'image/png');
+    }catch(err){ console.error(err); toast('Could not share: '+(err.message||err),'error'); }
+  };
+  gfxRenderPreview();
 }
 function generatePlayerStatsPDF(share){
   const stats = computePlayerStats().slice().sort((a,b)=>b.runs-a.runs);
